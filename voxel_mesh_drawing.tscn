@@ -1,0 +1,238 @@
+[gd_scene load_steps=10 format=3 uid="uid://ckc85jurlaf5q"]
+
+[ext_resource type="Script" path="res://voxel_mesh_drawing.gd" id="1_wt64s"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_f12e8"]
+transparency = 1
+albedo_color = Color(0.6, 0.466667, 1, 1)
+emission = Color(0.6, 0.466667, 1, 1)
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_073m7"]
+sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+ground_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+
+[sub_resource type="Sky" id="Sky_l0egx"]
+sky_material = SubResource("ProceduralSkyMaterial_073m7")
+
+[sub_resource type="Environment" id="Environment_04k5j"]
+background_mode = 2
+background_color = Color(0.140447, 0.140447, 0.140447, 1)
+sky = SubResource("Sky_l0egx")
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="GDScript" id="GDScript_k0km0"]
+script/source = "extends Node3D
+@onready var voxel_mesh_drawing = $\"..\"
+@onready var visual = $\"../Node3D2\"
+@onready var h_slider = %HSlider
+@onready var camera_3d = $Camera3D
+
+var drawing := false
+var deleting := false
+
+var projected_position := Vector3()
+var mpos := Vector2()
+
+@export var cursor_size := 1.0
+
+func _ready():
+	cursor_size = h_slider.value
+	voxel_mesh_drawing.call_deferred(\"new_stroke\")
+	h_slider.value_changed.connect(func(val:float):
+		cursor_size = val
+		)
+
+func _process(delta):
+	projected_position = get_viewport().get_camera_3d().project_position(mpos,camera_3d.position.z)
+	if drawing:
+		if cursor_size > voxel_mesh_drawing.density:
+			voxel_mesh_drawing.set_true_sphere(projected_position, cursor_size)
+		else:
+			voxel_mesh_drawing.set_true_nearest(projected_position)
+	if deleting:
+		if cursor_size > voxel_mesh_drawing.density:
+			voxel_mesh_drawing.set_false_sphere(projected_position, cursor_size)
+		else:
+			voxel_mesh_drawing.set_false_nearest(projected_position)
+	visual.global_position = projected_position
+	visual.scale = Vector3(cursor_size,cursor_size,cursor_size)
+
+func _input(event):
+	if event is InputEventMouse:
+		mpos = event.position
+		if event is InputEventMouseButton:
+			if event.button_index == 5 and event.is_pressed():
+				print(\"scroll?\")
+				camera_3d.position.z *= 1.1
+			if event.button_index == 4 and event.is_pressed():
+				print(\"scroll?\")
+				if camera_3d.position.z > 1.0:
+					camera_3d.position.z *= .9
+		if \"button_mask\" in event:
+			if event.button_mask == 1:
+				drawing = true
+			elif event.button_mask == 2:
+				deleting = true
+		if \"button_index\" in event and !event.pressed:
+			if event.button_index == 1:
+				print('unpress left')
+				drawing = false
+			if event.button_index == 2:
+				deleting = false
+	if event is InputEventKey and event.pressed:
+		if event.keycode == KEY_RIGHT:
+			rotation_degrees.y -= 2
+		if event.keycode == KEY_LEFT:
+			rotation_degrees.y += 2
+		if event.keycode == KEY_UP:
+			rotation_degrees.x += 2
+		if event.keycode == KEY_DOWN:
+			rotation_degrees.x -= 2
+"
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wmkp5"]
+shading_mode = 0
+albedo_color = Color(0, 1, 0, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ir21q"]
+shading_mode = 0
+albedo_color = Color(1, 0, 0, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_esybf"]
+shading_mode = 0
+albedo_color = Color(0, 0, 1, 1)
+
+[node name="uiroot" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Control" type="Control" parent="HBoxContainer"]
+custom_minimum_size = Vector2(113.55, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.0
+
+[node name="export as gltf" type="Button" parent="HBoxContainer/Control"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+text = "export as gltf"
+
+[node name="new mesh" type="Button" parent="HBoxContainer/Control"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = 31.0
+offset_right = 110.0
+offset_bottom = 62.0
+text = "new mesh"
+
+[node name="clear meshes" type="Button" parent="HBoxContainer/Control"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = 62.0
+offset_right = 110.0
+offset_bottom = 93.0
+text = "clear meshes"
+
+[node name="Label" type="Label" parent="HBoxContainer/Control"]
+layout_mode = 0
+offset_top = 93.0
+offset_right = 110.0
+offset_bottom = 116.0
+text = "brush size:"
+
+[node name="HSlider" type="SpinBox" parent="HBoxContainer/Control"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_top = 116.0
+offset_right = 110.0
+offset_bottom = 147.0
+min_value = 0.05
+max_value = 2.0
+step = 0.05
+value = 0.1
+alignment = 1
+update_on_text_changed = true
+
+[node name="Label2" type="Label" parent="HBoxContainer/Control"]
+layout_mode = 0
+offset_left = 0.275002
+offset_top = 147.0
+offset_right = 110.275
+offset_bottom = 170.0
+text = "density (m):"
+
+[node name="density_range" type="SpinBox" parent="HBoxContainer/Control"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 0.275002
+offset_top = 170.0
+offset_right = 110.275
+offset_bottom = 201.0
+min_value = 0.05
+max_value = 1.0
+step = 0.05
+value = 0.1
+alignment = 1
+update_on_text_changed = true
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="HBoxContainer/SubViewportContainer"]
+handle_input_locally = false
+size = Vector2i(1035, 648)
+render_target_update_mode = 4
+
+[node name="VoxelMeshDrawing" type="Node3D" parent="HBoxContainer/SubViewportContainer/SubViewport"]
+script = ExtResource("1_wt64s")
+density = 0.05
+mat = SubResource("StandardMaterial3D_f12e8")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="HBoxContainer/SubViewportContainer/SubViewport/VoxelMeshDrawing"]
+environment = SubResource("Environment_04k5j")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="HBoxContainer/SubViewportContainer/SubViewport/VoxelMeshDrawing"]
+transform = Transform3D(-0.866023, -0.433016, 0.250001, 0, 0.499998, 0.866027, -0.500003, 0.749999, -0.43301, 0, 0, 0)
+shadow_enabled = true
+
+[node name="Node3D" type="Node3D" parent="HBoxContainer/SubViewportContainer/SubViewport/VoxelMeshDrawing"]
+script = SubResource("GDScript_k0km0")
+
+[node name="Camera3D" type="Camera3D" parent="HBoxContainer/SubViewportContainer/SubViewport/VoxelMeshDrawing/Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+
+[node name="Node3D2" type="Node3D" parent="HBoxContainer/SubViewportContainer/SubViewport/VoxelMeshDrawing"]
+
+[node name="CSGBox3D" type="CSGBox3D" parent="HBoxContainer/SubViewportContainer/SubViewport/VoxelMeshDrawing/Node3D2"]
+material_override = SubResource("StandardMaterial3D_wmkp5")
+size = Vector3(0.01, 1, 0.01)
+
+[node name="CSGBox3D2" type="CSGBox3D" parent="HBoxContainer/SubViewportContainer/SubViewport/VoxelMeshDrawing/Node3D2"]
+transform = Transform3D(-4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, 0, 1, 0, 0, 0)
+material_override = SubResource("StandardMaterial3D_ir21q")
+size = Vector3(0.01, 1, 0.01)
+
+[node name="CSGBox3D3" type="CSGBox3D" parent="HBoxContainer/SubViewportContainer/SubViewport/VoxelMeshDrawing/Node3D2"]
+transform = Transform3D(1.91069e-15, -4.37114e-08, 1, -1, -4.37114e-08, 0, 4.37114e-08, -1, -4.37114e-08, 0, 0, 0)
+material_override = SubResource("StandardMaterial3D_esybf")
+size = Vector3(0.01, 1, 0.01)
+
+[node name="meshparent" type="Node" parent="HBoxContainer/SubViewportContainer/SubViewport/VoxelMeshDrawing"]
