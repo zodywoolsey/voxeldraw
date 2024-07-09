@@ -1,11 +1,18 @@
-[gd_scene load_steps=10 format=3 uid="uid://ckc85jurlaf5q"]
+[gd_scene load_steps=12 format=3 uid="uid://ckc85jurlaf5q"]
 
-[ext_resource type="Script" path="res://voxel_mesh_drawing.gd" id="1_wt64s"]
+[ext_resource type="Script" path="res://voxel_mesh_drawing_chunking.gd" id="1_kesrh"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_f12e8"]
-transparency = 1
-albedo_color = Color(0.6, 0.466667, 1, 1)
-emission = Color(0.6, 0.466667, 1, 1)
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_124yj"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_buyca"]
+in_3d_space = true
+seamless = true
+noise = SubResource("FastNoiseLite_124yj")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ldi8f"]
+albedo_texture = SubResource("NoiseTexture2D_buyca")
+uv1_triplanar = true
+uv1_world_triplanar = true
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_073m7"]
 sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
@@ -191,6 +198,20 @@ value = 0.1
 alignment = 1
 update_on_text_changed = true
 
+[node name="Label3" type="Label" parent="HBoxContainer/Control"]
+layout_mode = 0
+offset_top = 201.0
+offset_right = 110.0
+offset_bottom = 224.0
+text = "total voxels:"
+
+[node name="Label4" type="Label" parent="HBoxContainer/Control"]
+layout_mode = 0
+offset_top = 224.0
+offset_right = 110.0
+offset_bottom = 247.0
+text = "total voxels:"
+
 [node name="SubViewportContainer" type="SubViewportContainer" parent="HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -202,9 +223,9 @@ size = Vector2i(1035, 648)
 render_target_update_mode = 4
 
 [node name="VoxelMeshDrawing" type="Node3D" parent="HBoxContainer/SubViewportContainer/SubViewport"]
-script = ExtResource("1_wt64s")
+script = ExtResource("1_kesrh")
 density = 0.05
-mat = SubResource("StandardMaterial3D_f12e8")
+mat = SubResource("StandardMaterial3D_ldi8f")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="HBoxContainer/SubViewportContainer/SubViewport/VoxelMeshDrawing"]
 environment = SubResource("Environment_04k5j")
